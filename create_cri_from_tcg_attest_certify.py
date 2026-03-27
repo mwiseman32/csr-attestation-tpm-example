@@ -23,8 +23,6 @@ OID_cg_attest_tpm_certify = univ.ObjectIdentifier((2, 23, 133, 20, 1))
 # id-aa-evidence OBJECT IDENTIFIER ::= { id-aa TBDAA }
 id_aa_evidence = univ.ObjectIdentifier(rfc5751.id_aa + (59,))
 
-hint = "tpmverifier.example.com"
-
 # Generic upper limit for ASN.1 Sequences and stuff.
 MAX = 10
 
@@ -100,36 +98,34 @@ STATEMENT_MAPPINGS = {
 }
 
 
-# from draft-ietf-lamps-csr-attestation
-# EvidenceStatement ::= SEQUENCE {
-#    type   EVIDENCE-STATEMENT.&id({EvidenceStatementSet}),
-#    stmt   EVIDENCE-STATEMENT.&Type({EvidenceStatementSet}{@type}),
-#    hint   UTF8String OPTIONAL
+# from draft-ietf-lamps-csr-attestation-24
+# AttestationStatement ::= SEQUENCE {
+#    type   ATTESTATION-STATEMENT.&id({AttestationStatementSet}),
+#    stmt   ATTESTATION-STATEMENT.&Type(
+#               {AttestationStatementSet}{@type})
 # }
-class EvidenceStatement(univ.Sequence):
+class AttestationStatement(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('type', univ.ObjectIdentifier()),
         namedtype.NamedType('stmt', univ.Any(),
-                            openType=opentype.OpenType('type', STATEMENT_MAPPINGS)),
-        namedtype.OptionalNamedType('hint', char.UTF8String())
+                            openType=opentype.OpenType('type', STATEMENT_MAPPINGS))
     )
 
 # EvidenceStatementSet ::= SEQUENCE SIZE (1..MAX) OF EvidenceStatement
-class EvidenceStatementSet(univ.SequenceOf):
-    componentType = EvidenceStatement()
+class AttestationStatementSet(univ.SequenceOf):
+    componentType = AttestationStatement()
     subtypeSpec = constraint.ValueSizeConstraint(1, MAX)
 
-# EvidenceBundle ::= SEQUENCE {
-#   evidences SEQUENCE SIZE (1..MAX) OF EvidenceStatement,
-#   certs SEQUENCE SIZE (1..MAX) OF CertificateChoices OPTIONAL
+# AttestationBundle ::= SEQUENCE {
+#    attestations SEQUENCE SIZE (1..MAX) OF AttestationStatement,
+#    certs SEQUENCE SIZE (1..MAX) OF LimitedCertChoices OPTIONAL
+# }
 #      -- CertificateChoices MUST NOT contain the depreciated
 #      -- certificate structures or attribute certificates,
 #      -- see Section 10.2.2 of [RFC5652]
-#}
-
-class EvidenceBundle(univ.Sequence):
+class AttestationBundle(univ.Sequence):
     componentType = namedtype.NamedTypes(
-        namedtype.NamedType('evidences', EvidenceStatementSet()),
+        namedtype.NamedType('evidences', AttestationStatementSet()),
         namedtype.OptionalNamedType('certs', univ.SequenceOf(
             componentType = rfc5280.Certificate()).subtype( 
                 subtypeSpec = constraint.ValueSizeConstraint(1, MAX)
@@ -145,13 +141,12 @@ tcg_csr_certify[TPM_T_PUBLIC] = args_vars[TPM_T_PUBLIC_ARG].read()
 #tcg_csr_certify_der = encode(tcg_csr_certify)
 
 # Construct an EvidenceStatement
-evidenceStatement = EvidenceStatement()
+evidenceStatement = AttestationStatement()
 evidenceStatement['type'] = OID_cg_attest_tpm_certify
 evidenceStatement['stmt'] = tcg_csr_certify
-evidenceStatement['hint'] = char.UTF8String(hint)
 
 # Construct an EvidenceBundle
-evidenceBundle = EvidenceBundle()
+evidenceBundle = AttestationBundle()
 evidenceBundle['evidences'].append(evidenceStatement)
 for certFile in args_vars['akCertChain']:
 

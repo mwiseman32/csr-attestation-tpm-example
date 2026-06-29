@@ -1,0 +1,101 @@
+Using chatGPt I input this:
+
+Write the asnl1 syntax for the following:
+ATTESTATION-STATEMENT ::= TYPE-IDENTIFIER
+
+AttestationStatement ::= SEQUENCE {
+   type   ATTESTATION-STATEMENT.&id({AttestationStatementSet}),
+   stmt   ATTESTATION-STATEMENT.&Type({AttestationStatementSet}{@type})
+}
+
+AttestationStatementSet ATTESTATION-STATEMENT ::= {
+   ... -- None defined in this document --
+}
+
+AttestationBundle ::= SEQUENCE {
+   attestations SEQUENCE SIZE (1..MAX) OF AttestationStatement,
+   certs SEQUENCE SIZE (1..MAX) OF LimitedCertChoices OPTIONAL,
+}
+
+attr-attestations ATTRIBUTE ::= {
+  TYPE AttestationBundle
+  COUNTS MAX 1
+  IDENTIFIED BY id-aa-attestation
+}
+
+id-aa OBJECT IDENTIFIER ::= { 1.2.840.113549.1.9.16.2 }
+
+id-aa-attestation OBJECT IDENTIFIER ::= { id-aa 59 }
+
+id-tcg OBJECT IDENTIFIER ::= { 2 23 133 }
+
+id-tcg-attest OBJECT IDENTIFIER ::= { id-tcg 20 }
+
+id-tcg-attest-certify OBJECT IDENTIFIER ::= { id-tcg-attest 1 }
+
+id-tcg OBJECT IDENTIFIER ::= { 2 23 133 }
+id-tcg-attest OBJECT IDENTIFIER ::= { id-tcg 20 }
+id-tcg-attest-certify OBJECT IDENTIFIER ::= { id-tcg-attest 1 }
+id-tcg-attest-quote OBJECT IDENTIFIER ::= { id-tcg-attest 2 }
+
+
+certify OCTET STRING
+
+quotestr OCTET STRING
+
+createstr asn.1 structures where
+
+id-aa-attestation identified AttestationBundle
+
+There are two AttestationStatements:
+id-tcg-attest-certify with the contents of type is certifystr and 
+id-tcg-attest-quote with the contents of type is quotestr
+
+*** Returned ***
+AttestationModule DEFINITIONS ::= BEGIN
+
+id-aa OBJECT IDENTIFIER ::= { 1 2 840 113549 1 9 16 2 }
+id-aa-attestation OBJECT IDENTIFIER ::= { id-aa 59 }
+
+id-tcg OBJECT IDENTIFIER ::= { 2 23 133 }
+id-tcg-attest OBJECT IDENTIFIER ::= { id-tcg 20 }
+id-tcg-attest-certify OBJECT IDENTIFIER ::= { id-tcg-attest 1 }
+id-tcg-attest-quote OBJECT IDENTIFIER ::= { id-tcg-attest 2 }
+
+CertifyStr ::= OCTET STRING
+QuoteStr    ::= OCTET STRING
+
+ATTESTATION-STATEMENT ::= TYPE-IDENTIFIER
+
+certifyAttestation ATTESTATION-STATEMENT ::= {
+    IDENTIFIED BY id-tcg-attest-certify
+    TYPE CertifyStr
+}
+
+quoteAttestation ATTESTATION-STATEMENT ::= {
+    IDENTIFIED BY id-tcg-attest-quote
+    TYPE QuoteStr
+}
+
+AttestationStatementSet ATTESTATION-STATEMENT ::= {
+    certifyAttestation,
+    quoteAttestation
+}
+
+AttestationStatement ::= SEQUENCE {
+    type  ATTESTATION-STATEMENT.&id({AttestationStatementSet}),
+    stmt  ATTESTATION-STATEMENT.&Type({AttestationStatementSet}{@type})
+}
+
+AttestationBundle ::= SEQUENCE {
+    attestations  SEQUENCE SIZE (1..MAX) OF AttestationStatement,
+    certs         SEQUENCE SIZE (1..MAX) OF LimitedCertChoices OPTIONAL
+}
+
+attr-attestations ATTRIBUTE ::= {
+    TYPE AttestationBundle
+    SINGLE VALUE
+    IDENTIFIED BY id-aa-attestation
+}
+
+END
